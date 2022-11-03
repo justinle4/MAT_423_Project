@@ -1,10 +1,10 @@
 End of semester group project for the Fall 2022 section of MAT 423 - Numerical Analysis I, taught by Dr. Malena Español at Arizona State University.
 
 Group members:
-Justin Le (Owner of this repository)
-Jack Gutierrez
-Jerome Goh
-Hunter Rockwood
+Justin Le (Owner of this repository),
+Jack Gutierrez,
+Jerome Goh,
+Hunter Rockwood,
 Lewis Davis
 
 The objective of this project is to classify handwritten digits from the MNIST database, which is imported using the Pytorch module in Python. 
