@@ -10,3 +10,5 @@ print(y.shape)
 y = [1, 2, 3, 4]
 y = st.mean(y)
 print(y)
+for i in range(5, 76, 5):
+    print(i)
