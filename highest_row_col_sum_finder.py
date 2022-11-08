@@ -49,15 +49,24 @@ x_test = torch.squeeze(x_test, dim=1)
 
 
 df = pd.DataFrame(columns=('Identity', 'Brightest Row', 'Brightest Column'))
+df2 = pd.DataFrame(columns=('Identity', 'Infinity Norm', '1-Norm'))
 for i in range(x.size(dim=0)):
     col_sums = torch.sum(x[i], dim=0)
     row_sums = torch.sum(x[i], dim=1)
     whitest_col = torch.argmax(col_sums).item()
     whitest_row = torch.argmax(row_sums).item()
-    df.loc[i] = (y[i].item(), whitest_row, whitest_col)
+    identity = int(y[i].item())
+    df.loc[i] = (identity, whitest_row, whitest_col)
 
+    inf_norm = torch.linalg.norm(x[i], ord=float('inf')).item()
+    one_norm = torch.linalg.norm(x[i], ord=1).item()
+    df2.loc[i] = (identity, inf_norm, one_norm)
+
+df2 = df2.astype({'Identity': 'int'})
 print(df)
+print(df2)
 df.to_csv(f"brightest_rows_cols.tsv", sep="\t")
+df2.to_csv(f"inf_and_one_norms.tsv", sep="\t")
 
 
 

@@ -24,7 +24,7 @@ cfg = {
     'shuffle_dataset_test': False,
     'transform': transforms.ToTensor(),
     'k': 75,
-    'norm': 'fro'
+    'norm': 1
 }
 
 # dataset as tensors
@@ -55,7 +55,7 @@ for k in range(5, 80, 5):   # k goes from 5 to 75 in increments of 5 (5, 10, 15,
         norm_list = []
         for j in range(x.size(dim=0)):
             diff = x_test[i] - x[j]
-            norm = torch.linalg.norm(diff, ord=float('inf')).item()
+            norm = torch.linalg.norm(diff, ord=cfg['norm']).item()
             norm_list.append(norm)
         partitioned = np.argpartition(norm_list, k)
         k_smallest = partitioned[:k]
@@ -69,4 +69,4 @@ for k in range(5, 80, 5):   # k goes from 5 to 75 in increments of 5 (5, 10, 15,
     df.loc[int(k/5 - 1)] = (str(k), accuracy)
 
 print(df)
-df.to_csv(f"{cfg['norm']}_norm_results.tsv", sep="\t")
+df.to_csv("one_norm_results.tsv", sep="\t")
