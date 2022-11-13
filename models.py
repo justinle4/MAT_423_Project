@@ -12,6 +12,18 @@ class Linear(nn.Module):
         return s
 
 
+class doubleLinear(nn.Module):
+    def __init__(self):
+        super(doubleLinear, self).__init__()
+        self.l1 = nn.Linear(784, 100)
+        self.l2 = nn.Linear(100, 10)
+
+    def forward(self, x):
+        z1 = self.l1(x)
+        s = self.l2(z1)
+        return s
+
+
 class OneConv_kernel3(nn.Module):
     def __init__(self):
         super(OneConv_kernel3, self).__init__()

@@ -24,7 +24,7 @@ cfg = {
     'shuffle_dataset_test': False,
     'transform': transforms.ToTensor(),
     'k': 75,
-    'norm': 1
+    'norm': float('inf')
 }
 
 # dataset as tensors
@@ -63,10 +63,11 @@ for k in range(5, 80, 5):   # k goes from 5 to 75 in increments of 5 (5, 10, 15,
         for h in k_smallest:
             neighbor_list.append(y[h].item())
         guess = st.mode(neighbor_list)
-        if int(guess) == y[i].item():
+        if int(guess) == y_test[i].item():
             success += 1
     accuracy = success / cfg['sample_size_test']
     df.loc[int(k/5 - 1)] = (str(k), accuracy)
+    print(f'Epoch {int(k/5 -1)} complete')
 
 print(df)
-df.to_csv("one_norm_results.tsv", sep="\t")
+df.to_csv("inf_norm_results.tsv", sep="\t")
