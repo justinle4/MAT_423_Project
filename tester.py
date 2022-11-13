@@ -1,14 +1,8 @@
 import torch
 import statistics as st
+import torch.nn.functional as F
 
-y = torch.zeros(10, 1)
-y[3] = 1
-print(y)
-print(torch.argmax(y).item())
-print(y.shape)
-
-y = [1, 2, 3, 4]
-y = st.mean(y)
-print(y)
-for i in range(5, 76, 5):
-    print(i)
+y_value = 5
+y = torch.tensor(y_value)
+x = torch.rand((1, 784))
+print(x.size(dim=1))
