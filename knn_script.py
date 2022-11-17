@@ -21,10 +21,10 @@ cfg = {
     'num_epochs': 40,
     'path_data': "C:\\Users\\drpot\\PycharmProjects\\Fall2022Project\\Cropped Training Data\\",
     'shuffle_dataset_known': True,
-    'shuffle_dataset_test': False,
+    'shuffle_dataset_test': True,
     'transform': transforms.ToTensor(),
-    'k': 75,
-    'norm': float('inf')
+    'k': 5,
+    'norm': 'fro'
 }
 
 # dataset as tensors
@@ -47,9 +47,15 @@ x_test, y_test = next(iter(dataloader_test))
 x_test = torch.squeeze(x_test, dim=1)
 
 
-df = pd.DataFrame(columns=('K-Value', 'Accuracy'))
-# perform k-nearest-neighbors for varying values of k.
-for k in range(5, 80, 5):   # k goes from 5 to 75 in increments of 5 (5, 10, 15, ... , 70, 75)
+df = pd.DataFrame(columns=('Trial', 'Accuracy'))
+
+# perform k-nearest-neighbors for the SAME value of k (k=5) but shuffle dataset for multiple trials
+k = cfg['k']
+for trial in range(1, 20):   # k goes from 5 to 75 in increments of 5 (5, 10, 15, ... , 70, 75)
+    x, y = next(iter(dataloader_known))
+    x = torch.squeeze(x, dim=1)
+    x_test, y_test = next(iter(dataloader_test))
+    x_test = torch.squeeze(x_test, dim=1)
     success = 0
     for i in range(x_test.size(dim=0)):
         norm_list = []
@@ -66,8 +72,8 @@ for k in range(5, 80, 5):   # k goes from 5 to 75 in increments of 5 (5, 10, 15,
         if int(guess) == y_test[i].item():
             success += 1
     accuracy = success / cfg['sample_size_test']
-    df.loc[int(k/5 - 1)] = (str(k), accuracy)
-    print(f'Epoch {int(k/5 -1)} complete')
+    df.loc[trial] = (str(trial), accuracy)
+    print(f'Trial {trial} complete')
 
 print(df)
-df.to_csv("inf_norm_results.tsv", sep="\t")
+df.to_csv('trial_runs.tsv', sep='\t')
