@@ -4,7 +4,6 @@ import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-import torch.nn.functional as F
 from torchvision.transforms import *
 # classic
 import sys
@@ -13,7 +12,7 @@ import datetime
 import os
 from PIL import Image
 import pandas as pd
-import statistics as st
+import statistics
 import numpy as np
 from scipy import stats
 import statistics as st
@@ -22,7 +21,6 @@ import matplotlib.pyplot as plt
 # personal
 from models import *
 from toolbox import *
-
 
 def trainModel(myModel, cfg):
     myDataSet_train = torchvision.datasets.MNIST("C:\\Users\\drpot\\", train=True, transform=cfg['transform'])
@@ -36,20 +34,22 @@ def trainModel(myModel, cfg):
         print("--- Problem initialization: dataSet empty\n")
         sys.exit(2)
 
-    dataLoader_train = DataLoader(myDataSet_train, batch_size=cfg['batch_size'], num_workers=cfg['num_workers'])
-    dataLoader_valid = DataLoader(myDataSet_test, batch_size=cfg['batch_size'], num_workers=cfg['num_workers'])
+    dataLoader_train = DataLoader(myDataSet_train, batch_size=cfg['batch_size'], num_workers=cfg['num_workers'],
+                                  sampler=myDataSet_train.train_sampler)
+    dataLoader_valid = DataLoader(myDataSet_test, batch_size=cfg['batch_size'], num_workers=cfg['num_workers'],
+                                  sampler=myDataSet_test.test_sampler)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     myModel = torch.nn.DataParallel(myModel)
     myModel.to(device)
 
-    criterion = nn.MSELoss()
+    weight = torch.tensor(cfg['weight'])
+    criterion = nn.MSELoss(weight=weight.to(device))
     optimizer = torch.optim.SGD(myModel.parameters(), lr=cfg['learning_rate'])
 
     # training
     t0 = time.time()
-    df = pd.DataFrame(columns=('epoch', 'loss_train', 'loss_test', 'accuracy_train', 'accuracy_test'))
-    sm = nn.Softmax(dim=1)
+    df = pd.DataFrame(columns=('epoch', 'loss_train', 'loss_test', 'accuracy_train,' 'accuracy_test'))
 
     print("--- Training Begins ---")
     for epoch in range(cfg['num_epochs']):
@@ -59,42 +59,41 @@ def trainModel(myModel, cfg):
         loss_train = []
         loss_test = []
         for X, y_value in dataLoader_train:
-            # forward pass / prediction - The call to adventure!
-            X = torch.reshape(X, (X.size(dim=0), 28*28))
-            yhat = sm(myModel(X.to(device)))
-            y = F.one_hot(torch.tensor(y_value).clone().detach(), 10).float()
+            # forward pass
+            yhat = myModel(X.to(device))
 
-            # Loss Function / Objective Function - Getting our asses kicked!
+            # loss
+            y = torch.zeros((10, 1))
+            y[y_value] = 1
             myLoss_train = criterion(yhat, y.to(device))
-            loss_train.append(myLoss_train.item())
+            loss_train.append(myLoss_train)
 
-            # Optimization - Gaining Wisdom!
+            # backpropagation
             optimizer.zero_grad()
-            myLoss_train.backward()
+            loss_train.backward()
             optimizer.step()
 
-            # Did we get a hit?
-            for i in range(yhat.size(dim=0)):
-                if torch.argmax(yhat[i]).item() == y_value[i]:
-                    accuracy_train += 1
-        accuracy_train = accuracy_train / len(myDataSet_train)
-        avg_loss_train = st.mean(loss_train)
+            # accuracy
+            if torch.argmax(X).item() == y_value:
+                accuracy_train += 1
+
+        accuracy_train = st.mean(accuracy_train)
         # evaluate model
         myModel.eval()
         with torch.no_grad():
             for X, y_value in dataLoader_valid:
-                X = torch.reshape(X, (X.size(dim=0), 28*28))
-                yhat = sm(myModel(X.to(device)))
-                y = F.one_hot(torch.tensor(y_value).clone().detach(), 10).float()
+                yhat = myModel(X.to(device))
+                y = torch.zeros(10, 1)
+                y[y_value] = 1
                 myLoss_test = criterion(yhat, y)
-                loss_test.append(myLoss_test.item())
-                for i in range(yhat.size(dim=0)):
-                    if torch.argmax(yhat[i]).item() == y_value[i]:
-                        accuracy_test += 1
-        accuracy_test = accuracy_test / len(myDataSet_test)
-        avg_loss_test = st.mean(loss_test)
+                loss_test.append(myLoss_test)
+                if torch.argmax(X).item() == y_value:
+                    accuracy_test += 1
+
+
         # insert results into dataframe
-        df.loc[epoch] = [epoch, avg_loss_train, avg_loss_test, accuracy_train, accuracy_test]
+        df.loc[epoch] = [epoch, np.mean(loss_train), np.mean(loss_test),
+                         accuracy_train/len(myDataSet_train), accuracy_test/len(myDataSet_test)]
         print(f"Epoch {epoch + 1} complete")
 
     seconds_elapsed = time.time() - t0
@@ -102,8 +101,4 @@ def trainModel(myModel, cfg):
     print(f"--- Training Complete in {cfg['time_training']}  ---")
     cfg['str_time'] = datetime.datetime.now().replace(microsecond=0).isoformat(sep='_').replace(':', 'h', 1).replace(
         ':', 'm', 1)
-
-    os.makedirs(cfg['folder_result'] + '/Report_' + cfg['str_time'])
-    save_df_network(myModel, cfg, df)
-    return df
 
